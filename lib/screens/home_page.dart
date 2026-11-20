@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'pickup_page.dart';
 import 'request_board_page.dart';
-import 'reservation_page.dart';
+import 'reservations/reservation_inbox_page.dart';
 import 'supply_listing_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
           children: const [
             SupplyListingPage(),
             RequestBoardPage(),
-            ReservationPage(),
+            ReservationInboxPage(),
             PickupPage(),
           ],
         ),
