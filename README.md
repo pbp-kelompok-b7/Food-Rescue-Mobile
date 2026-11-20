@@ -20,6 +20,73 @@ User dapat membuat _supply listing_ untuk DONATE atau SELL, user lain dapat mene
 
 Food Rescue Mobile dikembangkan menggunakan Flutter sebagai versi mobile dari situs web Food Rescue pada Proyek Tengah Semester. Aplikasi mobile terhubung dengan backend Django yang sama melalui web service Django REST Framework.
 
+## Setup Lokal
+
+Prasyarat: Git dan Flutter SDK **3.13.x** beserta Dart yang disertakan. Versi SDK dikunci pada `environment.sdk` di `pubspec.yaml`. Untuk menjalankan di emulator Android, pasang Android Studio beserta Android SDK; untuk perangkat fisik, aktifkan USB debugging.
+
+1. Clone repository dan masuk ke folder aplikasi Flutter. Jika repository sudah tersedia, langsung masuk ke folder tersebut.
+
+   ```powershell
+   git clone https://github.com/pbp-kelompok-b7/Food-Rescue-Mobile.git
+   cd Food-Rescue-Mobile
+   ```
+
+2. Pastikan Flutter terpasang dan toolchain-nya sehat.
+
+   ```powershell
+   flutter --version
+   flutter doctor
+   ```
+
+   Selesaikan item yang ditandai `flutter doctor` sebelum melanjutkan, terutama Android toolchain dan license (`flutter doctor --android-licenses`).
+
+3. Install dependency sesuai lockfile.
+
+   ```powershell
+   flutter pub get
+   ```
+
+4. Siapkan target run: jalankan emulator Android dari Android Studio atau hubungkan perangkat fisik, lalu pastikan terdeteksi.
+
+   ```powershell
+   flutter devices
+   ```
+
+5. Jalankan aplikasi. Lihat [Konfigurasi API](#konfigurasi-api) untuk mengarahkan aplikasi ke backend.
+
+   ```powershell
+   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
+   ```
+
+Aplikasi dapat dibuka tanpa backend untuk melihat halaman placeholder tiap modul dan navigasi bottom bar. Untuk request API, jalankan backend Django pada port 8000 sesuai [README backend](https://github.com/pbp-kelompok-b7/Food-Rescue-Be#readme). Endpoint yang belum diimplementasikan tetap belum dapat digunakan.
+
+## Konfigurasi API
+
+Aplikasi mengambil dan mengirim data melalui web service Django REST Framework di `/api/v1/`. Base URL dibaca dari `--dart-define` saat compile/run sehingga tidak ada URL yang di-hardcode dan setiap anggota dapat mengarahkan ke backend lokal atau PWS tanpa mengubah kode.
+
+| Variable | Default | Penggunaan |
+| --- | --- | --- |
+| `API_BASE_URL` | `http://10.0.2.2:8000/api/v1` | Base URL web service yang dipakai aplikasi. |
+
+Pilih nilai `API_BASE_URL` sesuai target run:
+
+| Target | Nilai `API_BASE_URL` |
+| --- | --- |
+| Emulator Android (akses `localhost` host) | `http://10.0.2.2:8000/api/v1` |
+| iOS Simulator / Flutter Web di mesin yang sama | `http://127.0.0.1:8000/api/v1` |
+| Perangkat fisik satu jaringan dengan backend | `http://<IP-LAN-mesin-backend>:8000/api/v1` |
+| Backend PWS (production) | `https://<domain-pws-kelompok>/api/v1` |
+
+Contoh menjalankan dengan backend lokal dari emulator Android:
+
+```powershell
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
+```
+
+Emulator Android memetakan `10.0.2.2` ke `localhost` mesin host, jadi gunakan alamat tersebut, bukan `127.0.0.1`, saat backend berjalan di komputer yang sama. Jalankan backend Django terpisah pada port 8000 sesuai README backend. Untuk perangkat fisik, backend dan perangkat harus berada pada jaringan yang sama dan backend harus mengizinkan host/IP tersebut pada `DJANGO_ALLOWED_HOSTS`.
+
+Autentikasi mengikuti session Django dari Proyek Tengah Semester; request mutasi menyertakan cookie session dan header CSRF sesuai kesepakatan dengan backend. Jangan menaruh secret, password, atau token di dalam kode aplikasi karena seluruh isi APK dapat dibongkar.
+
 ## Problem & Solution
 
 _Packaged food surplus_ dan _compostable food waste_ sering tidak tersalurkan karena pemilik tidak mengetahui pihak yang dapat memanfaatkannya. Akibatnya, makanan layak konsumsi maupun sisa pangan yang masih berguna berakhir menjadi _waste_.
@@ -173,6 +240,37 @@ https://www.figma.com/design/IHKy4C88HVCrLH0B3wCbsU/Food-Rescue?node-id=0-1
 ## Tautan APK
 
 Tautan APK akan ditambahkan setelah Checkpoint 1.
+
+## Struktur Proyek
+
+```text
+lib/
+  main.dart            # Entry point aplikasi dan MaterialApp
+  screens/             # Satu halaman per modul
+    home_page.dart         # Shell navigasi (bottom navigation) antarmodul
+    supply_listing_page.dart
+    request_board_page.dart
+    reservation_page.dart
+    pickup_page.dart
+android/               # Project host Android untuk build dan APK
+pubspec.yaml           # Metadata, SDK constraint, dan dependency
+```
+
+Setiap modul memiliki halamannya sendiri di `lib/screens/`. Navigasi antarhalaman memakai `NavigationBar` (bottom navigation) pada `home_page.dart`. Halaman modul masih berupa placeholder dan akan diisi integrasi web service oleh penanggung jawab masing-masing.
+
+## Pemeriksaan & Build
+
+```powershell
+flutter analyze
+flutter test
+flutter build apk --release --dart-define=API_BASE_URL=https://<domain-pws-kelompok>/api/v1
+```
+
+`flutter analyze` menjalankan analisis statis sesuai `analysis_options.yaml`. `flutter test` menjalankan unit/widget test. `flutter build apk --release` menghasilkan APK di `build/app/outputs/flutter-apk/app-release.apk`. Gunakan nilai `API_BASE_URL` yang mengarah ke backend PWS untuk APK yang didistribusikan agar aplikasi terhubung ke data production, bukan backend lokal.
+
+## Deployment APK
+
+APK rilis diunggah sebagai Release di repository GitHub kelompok dan di platform Bitrise, sesuai ketentuan tugas. Build release memakai logo aplikasi kelompok. Saat build untuk distribusi, set `API_BASE_URL` ke domain PWS agar aplikasi yang dipasang pengguna langsung terhubung ke backend production.
 
 ## Scope & Safety Notes
 
